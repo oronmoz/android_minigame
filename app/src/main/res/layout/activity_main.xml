@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- Top part: Lives with a DripStone background -->
+    <RelativeLayout
+        android:id="@+id/topContainer"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/top_container_height"
+        android:layout_alignParentTop="true"
+        >
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/dripstoneBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="@drawable/top"/>
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:id="@+id/livesLayout"
+            android:layout_width="@dimen/hearts_width"
+            android:layout_height="@dimen/hearts_height"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="@dimen/hearts_margin"
+            android:layout_marginEnd="@dimen/hearts_margin"
+            android:layout_marginBottom="@dimen/hearts_margin">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/main_IMG_heart1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                app:srcCompat="@drawable/heart" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/main_IMG_heart2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="@dimen/heart_margin"
+                android:scaleType="fitCenter"
+                app:srcCompat="@drawable/heart" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/main_IMG_heart3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                app:srcCompat="@drawable/heart" />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+    </RelativeLayout>
+
+    <!-- Middle part: Game area with STONE background -->
+    <RelativeLayout
+        android:id="@+id/gameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/topContainer"
+        android:layout_above="@+id/buttonContainer">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/stoneBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/stone"
+            android:scaleType="centerCrop" />
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:layout_marginEnd="32dp">
+
+            <!-- Left column -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+
+            </RelativeLayout>
+
+            <!-- Middle column -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+
+            </RelativeLayout>
+
+            <!-- Right column -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+
+            </RelativeLayout>
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+        <!-- Player -->
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/main_IMG_player"
+            android:layout_width="@dimen/player_width"
+            android:layout_height="@dimen/player_height"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:rotation="120"
+            android:translationX="16dp"
+            app:srcCompat="@drawable/steve_riding_a_minecart" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_layout_height"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bottom">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/sculkBackground"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_size"
+            android:layout_marginStart="@dimen/def_margin"
+            android:layout_marginEnd="@dimen/def_margin"
+            android:layout_marginBottom="@dimen/def_margin"
+            android:layout_marginTop="@dimen/def_margin"/>
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_size"
+            android:layout_marginStart="@dimen/def_margin"
+            android:layout_marginEnd="@dimen/def_margin"
+            android:layout_marginBottom="@dimen/def_margin"
+            android:layout_marginTop="@dimen/def_margin"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/main_Button_arrow1"
+                android:layout_width="@dimen/button_size"
+                android:layout_height="@dimen/button_size"
+                android:layout_gravity="start"
+                android:background="@drawable/pngegg"
+                android:scaleX="-1" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/main_Button_arrow2"
+                android:layout_width="@dimen/button_size"
+                android:layout_height="@dimen/button_size"
+                android:layout_gravity="end"
+                android:background="@drawable/pngegg" />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+    </RelativeLayout>
+
+</RelativeLayout>

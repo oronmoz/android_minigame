@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="hearts_margin">14dp</dimen>
+    <dimen name="def_margin">28dp</dimen>
+    <dimen name="hearts_width">140dp</dimen>
+    <dimen name="hearts_height">40dp</dimen>
+    <dimen name="heart_margin">10dp</dimen>
+    <dimen name="button_size">96dp</dimen>
+    <dimen name="button_layout_size">780dp</dimen>
+    <dimen name="player_width">115.25dp</dimen>
+    <dimen name="player_height">135.5dp</dimen>
+    <dimen name="top_container_height">68dp</dimen>
+    <dimen name="obstacle_width">40dp</dimen>
+    <dimen name="obstacle_height">144dp</dimen>
+    <dimen name="bottom_layout_height">150dp</dimen>
+</resources>
