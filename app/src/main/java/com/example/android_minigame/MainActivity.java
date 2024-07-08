@@ -12,12 +12,10 @@ import android.content.Context;
 import android.widget.Toast;
 import android.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.Manifest;
 import java.util.ArrayList;
 import java.util.Random;
-import android.os.Looper;
 import android.util.Log;
 
 public class MainActivity extends AppCompatActivity {
@@ -119,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     private void initializeGame() {
         playerLane = CENTER_LANE;
         lives = INITIAL_LIVES;
+        lastObstacleSpawnTime = 0;
         updateLives();
         updatePlayerPosition();
         clearObstacles();
@@ -233,6 +232,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void gameOver() {
         isGameRunning = false;
+        if (gameThread != null) {
+            try {
+                gameThread.join();
+            } catch (InterruptedException e) {
+                Log.e("MainActivity", "Error stopping game thread", e);
+            }
+        }
+
         runOnUiThread(() -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Game Over")
@@ -250,6 +257,15 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void restartGame() {
+        isGameRunning = false;
+        if (gameThread != null) {
+            try {
+                gameThread.join();
+            } catch (InterruptedException e) {
+                Log.e("MainActivity", "Error stopping game thread", e);
+            }
+        }
+
         clearObstacles();
         initializeGame();
         startGame();
@@ -257,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void clearObstacles() {
         for (ImageView obstacle : obstacles) {
-            mainLayout.removeView(obstacle);
+            gameLayout.removeView(obstacle);
         }
         obstacles.clear();
     }
