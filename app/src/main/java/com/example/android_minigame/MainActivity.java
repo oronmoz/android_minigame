@@ -1,8 +1,11 @@
 package com.example.android_minigame;
 
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -11,14 +14,35 @@ import android.os.Vibrator;
 import android.content.Context;
 import android.widget.Toast;
 import android.app.AlertDialog;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.Manifest;
 import java.util.ArrayList;
 import java.util.Random;
-import android.util.Log;
+import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+import androidx.work.Configuration;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.WorkManager;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkRequest;
+import androidx.lifecycle.Observer;
+import androidx.work.WorkInfo;
+
+import com.example.android_minigame.workers.GameWorker;
+
+public class MainActivity extends AppCompatActivity implements GameWorker.GameCallback {
+
+    private static final String PREFS_NAME = "MyGamePrefs";
+    private static final String WORKMANAGER_INITIALIZED = "WorkManagerInitialized";
+    private WorkManager workManager;
+    private UUID currentWorkerId;
+    private WorkRequest gameWorkRequest;
+
     // Layout constants
     private static final int LANES = 3;
     private static final int LEFT_LANE = 0;
@@ -29,14 +53,13 @@ public class MainActivity extends AppCompatActivity {
     private static final float PLAYER_HEIGHT_DP = 135.5f;
     private static final float OBSTACLE_WIDTH_DP = 40f;
     private static final float OBSTACLE_HEIGHT_DP = 144f;
-
+    public static final long GAME_LOOP_DELAY = 50;
 
     // Game mechanics constants
     private float leftLaneX, centerLaneX, rightLaneX;
     private int playerLane = CENTER_LANE;
-    private static final float OBSTACLE_SPAWN_CHANCE = 0.05f;
-    private static final float OBSTACLE_SPEED = 25f;
-    private static final long GAME_LOOP_DELAY = 50;
+    private static final float OBSTACLE_SPAWN_CHANCE = 0.1f;
+    private static final float OBSTACLE_SPEED = 1000f;
     private static final long VIBRATION_DURATION = 500;
     private static final int MAX_OBSTACLES = 2;
     private static final long OBSTACLE_SPAWN_DELAY = 500; // 0.5 seconds
@@ -48,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Permission request code
-    private static final int VIBRATE_PERMISSION_CODE = 1001;
+    private static final int PERMISSION_REQUEST_VIBRATE = 1001;
 
     private RelativeLayout mainLayout;
     private RelativeLayout gameLayout;
@@ -59,11 +82,14 @@ public class MainActivity extends AppCompatActivity {
     private int lives = INITIAL_LIVES;
     private boolean isGameRunning = false;
     private Random random = new Random();
-    private Thread gameThread;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        workManager = WorkManager.getInstance(this);
+
         setContentView(R.layout.activity_main);
 
         float density = getResources().getDisplayMetrics().density;
@@ -74,11 +100,11 @@ public class MainActivity extends AppCompatActivity {
 
         initializeViews();
         initializeGame();
+        requestVibratePermission();
 
-        // Calculate lane positions after layout is drawn
         gameLayout.post(this::calculateLanePositions);
-    }
 
+    }
 
     private void calculateLanePositions() {
         int gameWidth = gameLayout.getWidth();
@@ -92,8 +118,6 @@ public class MainActivity extends AppCompatActivity {
         // Initial player position
         updatePlayerPosition();
     }
-
-
 
     private void initializeViews() {
         mainLayout = findViewById(R.id.main);
@@ -113,6 +137,42 @@ public class MainActivity extends AppCompatActivity {
         obstacles = new ArrayList<>();
     }
 
+    private void requestVibratePermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.VIBRATE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.VIBRATE},
+                    PERMISSION_REQUEST_VIBRATE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_VIBRATE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Vibration permission granted
+                Toast.makeText(this, "Vibration permission granted", Toast.LENGTH_SHORT).show();
+                // You could initialize vibration here if needed
+                initializeVibration();
+            } else {
+                // Vibration permission denied, handle accordingly
+                Toast.makeText(this, "Vibration permission denied. Some features may be limited.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void initializeVibration() {
+        // This method could be used to set up vibration-related features
+        // For example, you might want to create and store a Vibrator instance:
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator != null && vibrator.hasVibrator()) {
+            // Vibrator is available and ready to use
+            Log.d("MainActivity", "Vibrator initialized");
+        } else {
+            Log.d("MainActivity", "Vibrator not available on this device");
+        }
+    }
 
     private void initializeGame() {
         playerLane = CENTER_LANE;
@@ -155,7 +215,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void spawnObstacle() {
+private void spawnObstacle() {
+    Log.d("MainActivity", "Spawning obstacle");
+    runOnUiThread(() -> {
         ImageView obstacle = new ImageView(this);
         obstacle.setImageResource(R.drawable.dripstone);
         obstacle.setTag("uncollided");
@@ -179,7 +241,9 @@ public class MainActivity extends AppCompatActivity {
         params.topMargin = -obstacleHeight;
         gameLayout.addView(obstacle, params);
         obstacles.add(obstacle);
-    }
+        Log.d("MainActivity", "Obstacle spawned in lane: " + lane);
+    });
+}
 
     private boolean checkCollision() {
         for (ImageView obstacle : obstacles) {
@@ -206,12 +270,10 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-
     private void handleCollision() {
         lives--;
         updateLives();
 
-        // Vibrate
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED) {
             Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (vibrator != null && vibrator.hasVibrator()) {
@@ -219,11 +281,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Show crash notification
-        runOnUiThread(() -> {
-            Toast toast = Toast.makeText(this, "Crash!", Toast.LENGTH_SHORT);
-            toast.show();
-        });
+        runOnUiThread(() -> Toast.makeText(this, "Crash!", Toast.LENGTH_SHORT).show());
 
         if (lives <= 0) {
             gameOver();
@@ -231,14 +289,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void gameOver() {
-        isGameRunning = false;
-        if (gameThread != null) {
-            try {
-                gameThread.join();
-            } catch (InterruptedException e) {
-                Log.e("MainActivity", "Error stopping game thread", e);
-            }
-        }
+        stopGame();
 
         runOnUiThread(() -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -255,20 +306,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
     private void restartGame() {
-        isGameRunning = false;
-        if (gameThread != null) {
-            try {
-                gameThread.join();
-            } catch (InterruptedException e) {
-                Log.e("MainActivity", "Error stopping game thread", e);
-            }
-        }
-
+        stopGame();
         clearObstacles();
         initializeGame();
         startGame();
+        GameWorker.setCallback(this);
     }
 
     private void clearObstacles() {
@@ -280,14 +323,39 @@ public class MainActivity extends AppCompatActivity {
 
     private void startGame() {
         isGameRunning = true;
-        gameThread = new Thread(gameLoop);
-        gameThread.start();
+        Data inputData = new Data.Builder()
+                .putLong("GAME_LOOP_DELAY", 16L) // 16ms for ~60 FPS
+                .build();
+
+        OneTimeWorkRequest gameWorkRequest = new OneTimeWorkRequest.Builder(GameWorker.class)
+                .setInputData(inputData)
+                .build();
+
+        currentWorkerId = gameWorkRequest.getId();
+
+        workManager.enqueueUniqueWork(
+                "GameWork",
+                ExistingWorkPolicy.REPLACE,
+                gameWorkRequest
+        );
+
+        workManager.getWorkInfoByIdLiveData(currentWorkerId)
+                .observe(this, workInfo -> {
+                    if (workInfo != null) {
+                        Log.d("MainActivity", "WorkInfo state: " + workInfo.getState());
+                        if (workInfo.getState() == WorkInfo.State.RUNNING) {
+                            Log.d("MainActivity", "GameWorker is running");
+                        }
+                    }
+                });
+
+        GameWorker.setCallback(this);
     }
 
-    private void moveObstacles() {
+    private void moveObstacles(float deltaSeconds) {
         for (int i = obstacles.size() - 1; i >= 0; i--) {
             ImageView obstacle = obstacles.get(i);
-            float newY = obstacle.getY() + OBSTACLE_SPEED;
+            float newY = obstacle.getY() + (OBSTACLE_SPEED * deltaSeconds);
             obstacle.setY(newY);
 
             // Remove obstacle if it's off the screen
@@ -298,31 +366,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Runnable gameLoop = new Runnable() {
-        @Override
-        public void run() {
-            while (isGameRunning) {
-                runOnUiThread(() -> {
-                    moveObstacles();
-                    if (System.currentTimeMillis() - lastObstacleSpawnTime > OBSTACLE_SPAWN_DELAY
-                            && obstacles.size() < MAX_OBSTACLES) {
-                        if (random.nextFloat() < OBSTACLE_SPAWN_CHANCE) {
-                            spawnObstacle();
-                            lastObstacleSpawnTime = System.currentTimeMillis();
-                        }
-                    }
-                    if (checkCollision()) {
-                        handleCollision();
-                    }
-                });
-                try {
-                    Thread.sleep(GAME_LOOP_DELAY);
-                } catch (InterruptedException e) {
-                    Log.e("MainActivity", "Game loop interrupted", e);
+    @Override
+    public void onGameTick(long deltaTime) {
+        runOnUiThread(() -> {
+            float deltaSeconds = deltaTime / 1000f;
+            moveObstacles(deltaSeconds);
+
+            // Spawn new obstacles
+            if (System.currentTimeMillis() - lastObstacleSpawnTime > OBSTACLE_SPAWN_DELAY
+                    && obstacles.size() < MAX_OBSTACLES) {
+                if (random.nextFloat() < OBSTACLE_SPAWN_CHANCE) {
+                    spawnObstacle();
+                    lastObstacleSpawnTime = System.currentTimeMillis();
                 }
             }
-        }
-    };
+
+            if (checkCollision()) {
+                handleCollision();
+            }
+        });
+    }
 
 
     @Override
@@ -330,22 +393,16 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (!isGameRunning) {
             startGame();
+            GameWorker.setCallback(this);
         }
     }
-
 
     @Override
     protected void onPause() {
         super.onPause();
-        isGameRunning = false;
-        if (gameThread != null) {
-            try {
-                gameThread.join();
-            } catch (InterruptedException e) {
-                Log.e("MainActivity", "Error stopping game thread", e);
-            }
-        }
+        stopGame();
     }
+
 
     @Override
     protected void onResume() {
@@ -355,16 +412,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void stopGame() {
+        isGameRunning = false;
+        if (currentWorkerId != null) {
+            workManager.cancelWorkById(currentWorkerId);
+            Log.d("MainActivity", "Game stopped, WorkManager task cancelled");
+        }
+        GameWorker.setCallback(null);  // Remove the callback
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
-        isGameRunning = false;
-        if (gameThread != null) {
-            try {
-                gameThread.join();
-            } catch (InterruptedException e) {
-                Log.e("MainActivity", "Error stopping game thread", e);
-            }
-        }
+        stopGame();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopGame();
     }
 }
