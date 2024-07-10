@@ -12,8 +12,7 @@
         android:id="@+id/topContainer"
         android:layout_width="match_parent"
         android:layout_height="@dimen/top_container_height"
-        android:layout_alignParentTop="true"
-        >
+        android:layout_alignParentTop="true">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/dripstoneBackground"
@@ -75,13 +74,64 @@
             android:src="@drawable/stone"
             android:scaleType="centerCrop" />
 
-        <androidx.appcompat.widget.LinearLayoutCompat
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:layout_marginEnd="32dp">
+            android:weightSum="5">
 
-            <!-- Left column -->
+            <!-- Lane 1 -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+            </RelativeLayout>
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <!-- Lane 2 -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+            </RelativeLayout>
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <!-- Lane 3 -->
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/rails" />
+            </RelativeLayout>
+
+            <!-- Spacer -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <!-- Lane 4 -->
             <RelativeLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -91,10 +141,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     app:srcCompat="@drawable/rails" />
-
             </RelativeLayout>
 
-            <!-- Middle column -->
+            <!-- Spacer -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF" />
+
+            <!-- Lane 5 -->
             <RelativeLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
@@ -104,23 +159,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     app:srcCompat="@drawable/rails" />
-
             </RelativeLayout>
 
-            <!-- Right column -->
-            <RelativeLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    app:srcCompat="@drawable/rails" />
-
-            </RelativeLayout>
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
+        </LinearLayout>
 
         <!-- Player -->
         <androidx.appcompat.widget.AppCompatImageView

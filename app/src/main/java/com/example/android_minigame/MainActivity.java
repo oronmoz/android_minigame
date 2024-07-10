@@ -1,39 +1,36 @@
 package com.example.android_minigame;
 
-import android.content.SharedPreferences;
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.os.Vibrator;
-import android.content.Context;
 import android.widget.Toast;
-import android.app.AlertDialog;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import android.Manifest;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
+
+import com.example.android_minigame.workers.GameWorker;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
-
-import androidx.work.Configuration;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.WorkManager;
-import androidx.work.Data;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkRequest;
-import androidx.lifecycle.Observer;
-import androidx.work.WorkInfo;
-
-import com.example.android_minigame.workers.GameWorker;
 
 public class MainActivity extends AppCompatActivity implements GameWorker.GameCallback {
 
@@ -44,31 +41,31 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
     private WorkRequest gameWorkRequest;
 
     // Layout constants
-    private static final int LANES = 3;
+    private static final int LANES = 5;
     private static final int LEFT_LANE = 0;
-    private static final int CENTER_LANE = 1;
-    private static final int RIGHT_LANE = 2;
+    private static final int CENTER_LANE = 2;
+    private static final int RIGHT_LANE = 4;
     private static final int INITIAL_LIVES = 3;
-    private static final float PLAYER_WIDTH_DP = 115.25f;
-    private static final float PLAYER_HEIGHT_DP = 135.5f;
-    private static final float OBSTACLE_WIDTH_DP = 40f;
-    private static final float OBSTACLE_HEIGHT_DP = 144f;
+    private static final float PLAYER_WIDTH_DP = 70f;
+    private static final float PLAYER_HEIGHT_DP = 80f;
+    private static final float OBSTACLE_WIDTH_DP = 30f;
+    private static final float OBSTACLE_HEIGHT_DP = 100f;
     public static final long GAME_LOOP_DELAY = 50;
 
     // Game mechanics constants
-    private float leftLaneX, centerLaneX, rightLaneX;
+    private float[] lanePositions;
     private int playerLane = CENTER_LANE;
     private static final float OBSTACLE_SPAWN_CHANCE = 0.1f;
     private static final float OBSTACLE_SPEED = 1000f;
     private static final long VIBRATION_DURATION = 500;
-    private static final int MAX_OBSTACLES = 2;
+    private static final int MAX_OBSTACLES = 3;
     private static final long OBSTACLE_SPAWN_DELAY = 500; // 0.5 seconds
     private long lastObstacleSpawnTime = 0;
     private int playerWidth;
     private int playerHeight;
     private int obstacleWidth;
     private int obstacleHeight;
-
+    private MediaPlayer crashSound;
 
     // Permission request code
     private static final int PERMISSION_REQUEST_VIBRATE = 1001;
@@ -82,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
     private int lives = INITIAL_LIVES;
     private boolean isGameRunning = false;
     private Random random = new Random();
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,20 +96,20 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
 
         initializeViews();
         initializeGame();
+        initializeSounds();
         requestVibratePermission();
 
         gameLayout.post(this::calculateLanePositions);
-
     }
 
     private void calculateLanePositions() {
         int gameWidth = gameLayout.getWidth();
-        float laneWidth = gameWidth / 3f;
+        float laneWidth = gameWidth / (float) LANES;
 
-        // Calculate the center of each lane
-        leftLaneX = laneWidth / 2;
-        centerLaneX = gameWidth / 2f;
-        rightLaneX = gameWidth - (laneWidth / 2);
+        lanePositions = new float[LANES];
+        for (int i = 0; i < LANES; i++) {
+            lanePositions[i] = (i + 0.5f) * laneWidth;
+        }
 
         // Initial player position
         updatePlayerPosition();
@@ -137,6 +133,10 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
         obstacles = new ArrayList<>();
     }
 
+    private void initializeSounds() {
+        crashSound = MediaPlayer.create(this, R.raw.crash_sound);
+    }
+
     private void requestVibratePermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.VIBRATE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -151,23 +151,17 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_VIBRATE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Vibration permission granted
                 Toast.makeText(this, "Vibration permission granted", Toast.LENGTH_SHORT).show();
-                // You could initialize vibration here if needed
                 initializeVibration();
             } else {
-                // Vibration permission denied, handle accordingly
                 Toast.makeText(this, "Vibration permission denied. Some features may be limited.", Toast.LENGTH_LONG).show();
             }
         }
     }
 
     private void initializeVibration() {
-        // This method could be used to set up vibration-related features
-        // For example, you might want to create and store a Vibrator instance:
         Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
-            // Vibrator is available and ready to use
             Log.d("MainActivity", "Vibrator initialized");
         } else {
             Log.d("MainActivity", "Vibrator not available on this device");
@@ -184,26 +178,15 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
     }
 
     private void updatePlayerPosition() {
-        float targetX;
-        switch (playerLane) {
-            case LEFT_LANE:
-                targetX = leftLaneX;
-                break;
-            case RIGHT_LANE:
-                targetX = rightLaneX;
-                break;
-            case CENTER_LANE:
-            default:
-                targetX = centerLaneX;
-                break;
+        if (lanePositions != null && playerLane >= 0 && playerLane < LANES) {
+            float targetX = lanePositions[playerLane];
+            playerView.setX(targetX - (playerWidth / 2f));
         }
-
-        playerView.setX(targetX - (playerWidth / 2f));
     }
 
     private void movePlayer(int direction) {
         int newLane = playerLane + direction;
-        if (newLane >= LEFT_LANE && newLane <= RIGHT_LANE) {
+        if (newLane >= 0 && newLane < LANES) {
             playerLane = newLane;
             updatePlayerPosition();
         }
@@ -215,35 +198,23 @@ public class MainActivity extends AppCompatActivity implements GameWorker.GameCa
         }
     }
 
-private void spawnObstacle() {
-    Log.d("MainActivity", "Spawning obstacle");
-    runOnUiThread(() -> {
-        ImageView obstacle = new ImageView(this);
-        obstacle.setImageResource(R.drawable.dripstone);
-        obstacle.setTag("uncollided");
+    private void spawnObstacle() {
+        Log.d("MainActivity", "Spawning obstacle");
+        runOnUiThread(() -> {
+            ImageView obstacle = new ImageView(this);
+            obstacle.setImageResource(R.drawable.dripstone);
+            obstacle.setTag("uncollided");
 
-        int lane = random.nextInt(LANES);
-        float targetX;
-        switch (lane) {
-            case LEFT_LANE:
-                targetX = leftLaneX;
-                break;
-            case RIGHT_LANE:
-                targetX = rightLaneX;
-                break;
-            case CENTER_LANE:
-            default:
-                targetX = centerLaneX;
-                break;
-        }
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(obstacleWidth, obstacleHeight);
-        params.leftMargin = (int) (targetX - (obstacleWidth / 2f));
-        params.topMargin = -obstacleHeight;
-        gameLayout.addView(obstacle, params);
-        obstacles.add(obstacle);
-        Log.d("MainActivity", "Obstacle spawned in lane: " + lane);
-    });
-}
+            int lane = random.nextInt(LANES);
+            float targetX = lanePositions[lane];
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(obstacleWidth, obstacleHeight);
+            params.leftMargin = (int) (targetX - (obstacleWidth / 2f));
+            params.topMargin = -obstacleHeight;
+            gameLayout.addView(obstacle, params);
+            obstacles.add(obstacle);
+            Log.d("MainActivity", "Obstacle spawned in lane: " + lane);
+        });
+    }
 
     private boolean checkCollision() {
         for (ImageView obstacle : obstacles) {
@@ -274,6 +245,8 @@ private void spawnObstacle() {
         lives--;
         updateLives();
 
+        playCrashSound();
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.VIBRATE) == PackageManager.PERMISSION_GRANTED) {
             Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (vibrator != null && vibrator.hasVibrator()) {
@@ -285,6 +258,13 @@ private void spawnObstacle() {
 
         if (lives <= 0) {
             gameOver();
+        }
+    }
+
+    private void playCrashSound() {
+        if (crashSound != null) {
+            crashSound.seekTo(0);
+            crashSound.start();
         }
     }
 
@@ -387,7 +367,6 @@ private void spawnObstacle() {
         });
     }
 
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -402,7 +381,6 @@ private void spawnObstacle() {
         super.onPause();
         stopGame();
     }
-
 
     @Override
     protected void onResume() {
@@ -430,6 +408,10 @@ private void spawnObstacle() {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (crashSound != null) {
+            crashSound.release();
+            crashSound = null;
+        }
         stopGame();
     }
 }
