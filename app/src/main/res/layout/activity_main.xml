@@ -5,74 +5,23 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".UI.MainActivity">
 
-    <!-- Top part: Lives with a DripStone background -->
-    <RelativeLayout
-        android:id="@+id/topContainer"
+    <!-- Stone background -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/stoneBackground"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/top_container_height"
-        android:layout_alignParentTop="true">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/buttonContainer"
+        android:src="@drawable/stone"
+        android:scaleType="centerCrop" />
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/dripstoneBackground"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="@drawable/top"/>
-
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/livesLayout"
-            android:layout_width="@dimen/hearts_width"
-            android:layout_height="@dimen/hearts_height"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="@dimen/hearts_margin"
-            android:layout_marginEnd="@dimen/hearts_margin"
-            android:layout_marginBottom="@dimen/hearts_margin">
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/main_IMG_heart1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/heart" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/main_IMG_heart2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="@dimen/heart_margin"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/heart" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/main_IMG_heart3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitCenter"
-                app:srcCompat="@drawable/heart" />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
-    </RelativeLayout>
-
-    <!-- Middle part: Game area with STONE background -->
+    <!-- Game area with lanes -->
     <RelativeLayout
         android:id="@+id/gameLayout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_below="@id/topContainer"
+        android:layout_height="match_parent"
         android:layout_above="@+id/buttonContainer">
-
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/stoneBackground"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/stone"
-            android:scaleType="centerCrop" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -136,7 +85,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1">
-
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -154,7 +102,6 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1">
-
                 <androidx.appcompat.widget.AppCompatImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -176,6 +123,71 @@
 
     </RelativeLayout>
 
+    <!-- Score and Distance -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_margin="16dp">
+
+        <TextView
+            android:id="@+id/scoreTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Score: 0"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/odometerTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Distance: 0 m"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+    <!-- Hearts -->
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/livesLayout"
+        android:layout_width="@dimen/hearts_width"
+        android:layout_height="@dimen/hearts_height"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="@dimen/hearts_margin"
+        android:layout_marginEnd="@dimen/hearts_margin"
+        android:layout_marginBottom="@dimen/hearts_margin">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/main_IMG_heart1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/heart" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/main_IMG_heart2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="@dimen/heart_margin"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/heart" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/main_IMG_heart3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/heart" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <!-- Button container -->
     <RelativeLayout
         android:id="@+id/buttonContainer"
         android:layout_width="match_parent"

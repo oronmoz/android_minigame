@@ -1,8 +1,9 @@
-package com.example.android_minigame.workers;
+package com.example.android_minigame.Logic.workers;
 
 import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -14,7 +15,7 @@ public class GameWorker extends Worker {
 
     public GameWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
-        this.gameLoopDelay = workerParams.getInputData().getLong("GAME_LOOP_DELAY", 16); // Aim for 60 FPS
+        this.gameLoopDelay = workerParams.getInputData().getLong("GAME_LOOP_DELAY", 16);
     }
 
     @NonNull
@@ -30,20 +31,23 @@ public class GameWorker extends Worker {
 
             if (deltaTime >= gameLoopDelay) {
                 if (callback != null) {
-                    callback.onGameTick(deltaTime);
-                    tickCount++;
-                    if (tickCount % 60 == 0) {  // Log every second (assuming 60 FPS)
-                        Log.d(TAG, "Game tick: " + tickCount);
+                    try {
+                        callback.onGameTick(deltaTime);
+                        tickCount++;
+                        if (tickCount % 60 == 0) {
+                            Log.d(TAG, "Game tick: " + tickCount);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error in game tick", e);
                     }
                 } else {
                     Log.w(TAG, "Callback is null, stopping worker");
-                    return Result.success();  // Stop the worker if callback is null
+                    return Result.success();
                 }
                 lastUpdateTime = currentTime;
             } else {
-                // Sleep for the remaining time until the next update
                 try {
-                    Thread.sleep(gameLoopDelay - deltaTime);
+                    Thread.sleep(1);
                 } catch (InterruptedException e) {
                     Log.e(TAG, "Game loop interrupted", e);
                     return Result.failure();
