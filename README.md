@@ -1,6 +1,6 @@
 # Minecraft-Inspired Android Game
 
-![image](https://github.com/user-attachments/assets/89547d67-f80d-4f0b-8361-41eee2dbed80=128x128)
+![icon_image](https://github.com/user-attachments/assets/556c029b-b915-4c85-b7f9-27b25b2cca14.png=250x250)
 
 ## Overview
 This is a Minecraft-inspired endless runner game for Android. The player controls a character riding a minecart, dodging obstacles, and collecting diamonds across five lanes.
