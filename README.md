@@ -1,47 +1,58 @@
-# Android Minigame: Minecraft-Inspired Runner
+# Minecraft-Inspired Android Game
 
-## Description
-A simple Android Minecraft-inspired runner game.
-The player controls Steve as he rides a minecart. The aim is to dodge falling Dripstones by moving between three lanes.
-The game features a custom UI with Minecraft-style graphics.
+## Overview
+This is a Minecraft-inspired endless runner game for Android. The player controls a character riding a minecart, dodging obstacles, and collecting diamonds across five lanes.
 
 ## Features
-- Three-lane gameplay
-- Falling obstacles (dripstones)
-- Lives system with heart icons
-- Vibration feedback on collisions
-- Custom Minecraft-inspired graphics
-- Responsive controls for moving between lanes
+- 5-lane gameplay
+- Two difficulty modes: Normal, Hard
+- Two game modes: TwoButton, Sensor
+- Obstacle dodging and diamond collection
+- Lives system with visual heart indicators
+- Score and distance tracking
+- Sound effects for crashes
+- Vibration feedback
+- High score system with leaderboard
+- Google Maps integration for high-score locations
+
+## Gameplay Modes
+1. Two-Button (Slow): Move left or right with buttons (Normal difficulty)
+2. Two-Button (Fast): Move left or right with buttons (Hard difficulty)
+3. Sensor: Tilt the phone to move (uses accelerometer)
 
 ## Technical Details
 - Developed for Android using Java
-- Utilizes Android's RelativeLayout for game structure
-- Custom game loop implementation for obstacle movement and collision detection
-- Implements vibration feedback (requires VIBRATE permission)
+- Uses AndroidX libraries
+- Implements WorkManager for game loop management
+- Utilizes Glide for GIF animations
+- Integrates Google Maps API for location features
 
 ## Setup
-1. Clone the repository to your local machine.
-2. Open the project in Android Studio.
-3. Ensure you have the Android SDK installed with a minimum API level of [26].
-4. Build and run the project on an Android emulator or physical device.
+1. Clone the repository
+2. Open the project in Android Studio
+3. Sync Gradle files
+4. Run the app on an Android device or emulator
 
-## How to Play
-- Tap the left arrow to move left
-- Tap the right arrow to move right
-- Avoid colliding with falling dripstones
-- The game ends when you lose all three lives
-
-## Project Structure
-- `MainActivity.java`: Main game logic and UI handling
-- `activity_main.xml`: Layout file for the game UI
-- `res/drawable/`: Contains all game graphics
-- `res/values/dimens.xml`: Defines dimensions for game elements
+## Dependencies
+- AndroidX AppCompat
+- AndroidX ConstraintLayout
+- Google Material Design Components
+- WorkManager
+- Glide
+- Google Play Services (Maps)
 
 ## Permissions
-- `android.permission.VIBRATE`: Used for vibration feedback on collisions
+- Vibration
+- Location (for high score map feature)
 
-## Contributors
-- [Oron Mozes]
+## How to Play
+1. Choose a gameplay mode from the main menu
+2. Dodge obstacles (dripstones) by moving left or right
+3. Collect diamonds to increase your score
+4. Try to travel as far as possible without losing all lives
 
-## Acknowledgments
-- Inspired by Minecraft, created by Mojang Studios
+## Contributing
+Feel free to fork the repository and submit pull requests for any improvements or bug fixes.
+
+## Acknowledgements
+- Minecraft by Mojang
