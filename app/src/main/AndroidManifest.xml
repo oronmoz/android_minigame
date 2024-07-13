@@ -19,7 +19,7 @@
         tools:targetApi="31">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCtv6De2nrX0JGauVBlm8krO56rYN_3gh0" />
+            android:value="YOUR_API_KEY" />
         <activity
             android:name=".UI.MenuActivity"
             android:exported="true">
