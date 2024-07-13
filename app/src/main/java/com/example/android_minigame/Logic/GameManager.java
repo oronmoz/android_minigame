@@ -6,8 +6,6 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -15,11 +13,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.core.content.ContextCompat;
-
 import com.bumptech.glide.Glide;
 import com.example.android_minigame.Logic.workers.GameWorker;
 import com.example.android_minigame.R;
+import com.example.android_minigame.Utilities.SoundManager;
+import com.example.android_minigame.Utilities.VibrationManager;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -27,59 +25,93 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameManager implements GameWorker.GameCallback {
     private static final String TAG = "GameManager";
+
+    // Game Absolute Constants
     private static final int LANES = 5;
-    private static final int LEFT_LANE = 0;
     private static final int CENTER_LANE = 2;
-    private static final int RIGHT_LANE = 4;
     private static final int INITIAL_LIVES = 3;
-    private static final float OBSTACLE_SPAWN_CHANCE = 0.3f;
-    private static final float OBSTACLE_SPEED = 1000f;
     private static final long VIBRATION_DURATION = 500;
     private static final int MAX_OBSTACLES = 3;
-    private static final long OBSTACLE_SPAWN_DELAY = 500; // 0.5 seconds
-    private static final float DIAMOND_SPAWN_CHANCE = 0.2f;
-    private static final float DIAMOND_SPEED = 800f;
     private static final int MAX_DIAMONDS = 1;
-    private static final int DISTANCE_INCREMENT = 1;
+    private static final float TILT_THRESHOLD = 3.0f;
+    private static final float SMOOTHING_FACTOR = 0.1f;
+    private static final int DIAMOND_VALUE = 50;
+
+    // Easy Difficulty Constants
+    private static final float EASY_OBSTACLE_SPAWN_CHANCE = 0.3f;
+    private static final float EASY_OBSTACLE_SPEED = 700f;
+    private static final long EASY_OBSTACLE_SPAWN_DELAY = 1000;
+    private static final float EASY_DIAMOND_SPAWN_CHANCE = 0.4f;
+    private static final float EASY_DIAMOND_SPEED = 500f;
+    private static final int EASY_DISTANCE_INCREMENT = 1;
+
+    // Hard Difficulty Constants
+    private static final float HARD_OBSTACLE_SPAWN_CHANCE = 0.6f;
+    private static final float HARD_OBSTACLE_SPEED = 1400f;
+    private static final long HARD_OBSTACLE_SPAWN_DELAY = 500;
+    private static final float HARD_DIAMOND_SPAWN_CHANCE = 0.2f;
+    private static final float HARD_DIAMOND_SPEED = 1000f;
+    private static final int HARD_DISTANCE_INCREMENT = 2;
+
+    // Game settings
+    private float OBSTACLE_SPAWN_CHANCE;
+    private float OBSTACLE_SPEED;
+    private long OBSTACLE_SPAWN_DELAY;
+    private float DIAMOND_SPAWN_CHANCE;
+    private float DIAMOND_SPEED;
+    private int DISTANCE_INCREMENT;
+
+    private Context context;
+    private Random random;
+    private GameCallback gameCallback;
+    private MediaPlayer crashSound;
+    private ScoreManager scoreManager;
+    private SoundManager soundManager;
+    private VibrationManager vibrationManager;
 
 
+    //Game Views
+    private RelativeLayout gameLayout;
     private TextView scoreTextView;
     private TextView odometerTextView;
+    private ImageView playerView;
+    private ImageView[] heartViews;
+
+    //Game Values
+    private String gameMode;
+    private boolean isTilted = false;
+    private float lastTiltValue = 0f;
     private int score;
     private int distance;
-    private Context context;
-    private RelativeLayout gameLayout;
-    private ImageView playerView;
     private CopyOnWriteArrayList<ImageView> obstacles;
     private CopyOnWriteArrayList<ImageView> diamonds;
-    private ImageView[] heartViews;
     private float[] lanePositions;
     private int playerLane;
     private int lives;
     private long lastObstacleSpawnTime;
     private boolean isGameRunning;
-    private Random random;
-    private MediaPlayer crashSound;
     private int playerWidth;
     private int playerHeight;
     private int obstacleWidth;
     private int obstacleHeight;
-    private GameCallback gameCallback;
     private long lastUpdateTime;
+    private float smoothedTilt = 0f;
+    private int difficultyFactor = 0;
 
     public interface GameCallback {
-        void onGameOver();
-
         void onLivesUpdated(int lives);
-
         void onScoreUpdated(int score);
-
         void onDistanceUpdated(int distance);
+
+        void onGameOver(int finalScore);
+
+        void onNewHighScore(int finalScore);
     }
 
     public GameManager(Context context, RelativeLayout gameLayout, ImageView playerView,
                        ImageView[] heartViews, TextView scoreTextView, TextView odometerTextView,
-                       int playerWidth, int playerHeight, int obstacleWidth, int obstacleHeight) {
+                       int playerWidth, int playerHeight, int obstacleWidth, int obstacleHeight,
+                       String difficulty, String gameMode) {
         this.context = context;
         this.gameLayout = gameLayout;
         this.playerView = playerView;
@@ -93,7 +125,32 @@ public class GameManager implements GameWorker.GameCallback {
         this.odometerTextView = odometerTextView;
         this.distance = 0;
         this.random = new Random();
+        this.vibrationManager = VibrationManager.getInstance(context);
+        this.soundManager = SoundManager.getInstance(context);
         initializeSounds();
+        this.gameMode = gameMode;
+        setDifficulty(difficulty);
+    }
+
+    private void setDifficulty(String difficulty) {
+        if ("Hard".equals(difficulty)) {
+            OBSTACLE_SPAWN_CHANCE = HARD_OBSTACLE_SPAWN_CHANCE;
+            OBSTACLE_SPEED = HARD_OBSTACLE_SPEED;
+            OBSTACLE_SPAWN_DELAY = HARD_OBSTACLE_SPAWN_DELAY;
+            DIAMOND_SPAWN_CHANCE = HARD_DIAMOND_SPAWN_CHANCE;
+            DIAMOND_SPEED = HARD_DIAMOND_SPEED;
+            DISTANCE_INCREMENT = HARD_DISTANCE_INCREMENT;
+            difficultyFactor = 2;
+        } else {
+            // Default to Easy
+            OBSTACLE_SPAWN_CHANCE = EASY_OBSTACLE_SPAWN_CHANCE;
+            OBSTACLE_SPEED = EASY_OBSTACLE_SPEED;
+            OBSTACLE_SPAWN_DELAY = EASY_OBSTACLE_SPAWN_DELAY;
+            DIAMOND_SPAWN_CHANCE = EASY_DIAMOND_SPAWN_CHANCE;
+            DIAMOND_SPEED = EASY_DIAMOND_SPEED;
+            DISTANCE_INCREMENT = EASY_DISTANCE_INCREMENT;
+            difficultyFactor = 1;
+        }
     }
 
     public void setGameCallback(GameCallback callback) {
@@ -137,6 +194,16 @@ public class GameManager implements GameWorker.GameCallback {
         Log.d(TAG, "Lane positions calculated: " + Arrays.toString(lanePositions));
     }
 
+    public void adjustPlayerPositionForSensorMode() {
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) playerView.getLayoutParams();
+        if ("Sensor".equals(gameMode)) {
+            params.bottomMargin = (int) (gameLayout.getHeight() * 0.1); // 10% from bottom
+        } else {
+            params.bottomMargin = 0;
+        }
+        playerView.setLayoutParams(params);
+    }
+
     public void updatePlayerPosition() {
         if (lanePositions != null && playerLane >= 0 && playerLane < LANES) {
             float targetX = lanePositions[playerLane];
@@ -144,11 +211,36 @@ public class GameManager implements GameWorker.GameCallback {
         }
     }
 
+    public void setScoreManager(ScoreManager scoreManager) {
+        this.scoreManager = scoreManager;
+    }
+
+    public void handleSensorInput(float tiltValue) {
+        if ("Sensor".equals(gameMode)) {
+            // Apply exponential smoothing
+            smoothedTilt = SMOOTHING_FACTOR * tiltValue + (1 - SMOOTHING_FACTOR) * smoothedTilt;
+
+            int newLane = calculateLaneFromTilt(smoothedTilt);
+            if (newLane != playerLane) {
+                playerLane = newLane;
+                updatePlayerPosition();
+            }
+        }
+    }
+
+    private int calculateLaneFromTilt(float tiltValue) {
+        int laneDifference = Math.round(tiltValue / TILT_THRESHOLD);
+        int newLane = CENTER_LANE - laneDifference;
+        return Math.max(0, Math.min(LANES - 1, newLane));
+    }
+
     public void movePlayer(int direction) {
-        int newLane = playerLane + direction;
-        if (newLane >= 0 && newLane < LANES) {
-            playerLane = newLane;
-            updatePlayerPosition();
+        if ("TwoButtons".equals(gameMode)) {
+            int newLane = playerLane + direction;
+            if (newLane >= 0 && newLane < LANES) {
+                playerLane = newLane;
+                updatePlayerPosition();
+            }
         }
     }
 
@@ -264,33 +356,38 @@ public class GameManager implements GameWorker.GameCallback {
     }
 
     private void playCrashSound() {
-        if (crashSound != null) {
-            try {
-                crashSound.seekTo(0);
-                crashSound.start();
-                Log.d(TAG, "Crash sound started playing");
-            } catch (Exception e) {
-                Log.e(TAG, "Error playing crash sound", e);
-            }
-        } else {
-            Log.e(TAG, "Crash sound is null, can't play");
+        try {
+            soundManager.playCrashSound();
+            ; // 500ms vibration
+        } catch (Exception e) {
+            Log.e(TAG, "Error during sound", e);
         }
     }
+
 
     private void vibrate() {
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.VIBRATE)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-            if (vibrator != null && vibrator.hasVibrator()) {
-                vibrator.vibrate(VibrationEffect.createOneShot(VIBRATION_DURATION, VibrationEffect.DEFAULT_AMPLITUDE));
-            }
+        try {
+            vibrationManager.vibrate(500); // 500ms vibration
+        } catch (Exception e) {
+            Log.e(TAG, "Error during vibration", e);
         }
     }
 
-    private void gameOver() {
+    public void gameOver() {
         isGameRunning = false;
-        if (gameCallback != null) {
-            gameCallback.onGameOver();
+        Log.d("GameManager", "Game Over. Score: " + score);
+        boolean isHighScore = scoreManager.isHighScore(score);
+        Log.d("GameManager", "Is High Score: " + isHighScore);
+        if (isHighScore) {
+            if (gameCallback != null) {
+                Log.d("GameManager", "Calling onNewHighScore");
+                gameCallback.onNewHighScore(score);
+            }
+        } else {
+            if (gameCallback != null) {
+                Log.d("GameManager", "Calling onGameOver");
+                gameCallback.onGameOver(score);
+            }
         }
     }
 
@@ -368,7 +465,6 @@ public class GameManager implements GameWorker.GameCallback {
         checkDiamondCollection();
     }
 
-    // Update the updateOdometer method
     private void updateOdometer() {
         new Handler(Looper.getMainLooper()).post(() -> {
             if (odometerTextView != null) {
@@ -432,7 +528,7 @@ public class GameManager implements GameWorker.GameCallback {
     }
 
     private void collectDiamond(final ImageView diamond) {
-        score++;
+        score = score + (DIAMOND_VALUE * difficultyFactor);
         updateScore();
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
@@ -442,17 +538,6 @@ public class GameManager implements GameWorker.GameCallback {
                 //showDiamondCollectionNotification();
             }
         });
-    }
-
-    private void showDiamondCollectionNotification() {
-        if (context instanceof Activity) {
-            ((Activity) context).runOnUiThread(() -> {
-                Toast.makeText(context, "Diamond Collected!", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "Showing diamond collection notification Toast");
-            });
-        } else {
-            Log.e(TAG, "Context is not an Activity, can't show Toast");
-        }
     }
 
     public void release() {

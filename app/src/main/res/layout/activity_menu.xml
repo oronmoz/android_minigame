@@ -9,35 +9,103 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mini Game"
-        android:textSize="24sp"
+        android:text="@string/game_title"
+        android:textSize="48sp"
         android:layout_marginBottom="32dp" />
 
-    <Button
-        android:id="@+id/btn_choose_mode_1"
-        android:layout_width="200dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose Mode 1"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp">
 
-    <Button
-        android:id="@+id/btn_choose_mode_2"
-        android:layout_width="200dp"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/choose_difficulty"
+            android:layout_marginEnd="92dp"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/difficultyButton"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:scaleType="fitCenter"
+                android:background="@null"
+                android:contentDescription="@string/choose_difficulty" />
+
+            <TextView
+                android:id="@+id/difficultyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/normal_difficulty"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose Mode 2"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/choose_gamemode"
+            android:textSize="18sp"
+            android:layout_marginEnd="70dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/gameModeButton"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:scaleType="fitCenter"
+                android:background="@null"
+                android:contentDescription="@string/choose_gamemode" />
+
+            <TextView
+                android:id="@+id/gameModeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/two_buttons"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <Button
         android:id="@+id/btn_start_game"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Start Game"
-        android:layout_marginBottom="8dp" />
+        android:text="@string/start_game"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="32dp" />
 
     <Button
         android:id="@+id/btn_leaderboard"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
-        android:text="Leaderboard" />
+        android:text="@string/leaderboard" />
 
 </LinearLayout>

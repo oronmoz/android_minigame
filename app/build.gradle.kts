@@ -47,4 +47,11 @@ dependencies {
     //GIF
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
+
+    //Gson
+    implementation(libs.gson);
+
+    //GoogleMaps
+    implementation(libs.play.services.maps);
+    implementation(libs.play.services.location);
 }

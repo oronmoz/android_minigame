@@ -1,8 +1,11 @@
 package com.example.android_minigame;
 
 import android.app.Application;
+
 import androidx.work.Configuration;
 import androidx.work.WorkManager;
+
+import com.example.android_minigame.Utilities.SharedPreferencesManager;
 
 public class MyApplication extends Application {
     @Override
@@ -16,5 +19,8 @@ public class MyApplication extends Application {
                         .setMinimumLoggingLevel(android.util.Log.INFO)
                         .build()
         );
+
+        // Initialize SharedPreferencesManager
+        SharedPreferencesManager.init(this);
     }
 }

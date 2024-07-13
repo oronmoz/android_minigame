@@ -1,8 +1,7 @@
 package com.example.android_minigame.Logic;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-
+import com.example.android_minigame.Utilities.SharedPreferencesManager;
+import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
@@ -10,21 +9,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
+
 public class ScoreManager {
-    private static final String PREF_NAME = "ScorePreferences";
     private static final String KEY_SCORES = "Scores";
     private static final int MAX_SCORES = 10;
 
-    private SharedPreferences sharedPreferences;
     private Gson gson;
 
-    public ScoreManager(Context context) {
-        sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+    public ScoreManager() {
         gson = new Gson();
     }
 
     public List<Score> getTopScores() {
-        String json = sharedPreferences.getString(KEY_SCORES, null);
+        String json = SharedPreferencesManager.getInstance().getString(KEY_SCORES, null);
         Type type = new TypeToken<ArrayList<Score>>() {
         }.getType();
         List<Score> scores = gson.fromJson(json, type);
@@ -39,12 +37,12 @@ public class ScoreManager {
 
     public boolean isHighScore(int score) {
         List<Score> topScores = getTopScores();
-        return topScores.size() < MAX_SCORES || score > topScores.get(topScores.size() - 1).getScore();
+        return topScores.isEmpty() || topScores.size() < MAX_SCORES || score > topScores.get(topScores.size() - 1).getScore();
     }
 
-    public void addScore(String playerName, int score) {
+    public void addScore(String playerName, int score, double latitude, double longitude) {
         List<Score> scores = getTopScores();
-        scores.add(new Score(playerName, score));
+        scores.add(new Score(playerName, score, latitude, longitude));
         Collections.sort(scores);
 
         if (scores.size() > MAX_SCORES) {
@@ -52,6 +50,6 @@ public class ScoreManager {
         }
 
         String json = gson.toJson(scores);
-        sharedPreferences.edit().putString(KEY_SCORES, json).apply();
+        SharedPreferencesManager.getInstance().putString(KEY_SCORES, json);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.android_minigame.Fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,12 +23,28 @@ public class ScoresFragment extends Fragment {
     private RecyclerView recyclerView;
     private ScoreAdapter adapter;
 
+    public interface OnScoreSelectedListener {
+        void onScoreSelected(Score score);
+    }
+
+    private OnScoreSelectedListener listener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnScoreSelectedListener) {
+            listener = (OnScoreSelectedListener) context;
+        } else {
+            throw new RuntimeException(context.toString() + " must implement OnScoreSelectedListener");
+        }
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_scores, container, false);
 
-        scoreManager = new ScoreManager(requireContext());
+        scoreManager = new ScoreManager();
         recyclerView = view.findViewById(R.id.recyclerViewScores);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
@@ -38,15 +55,25 @@ public class ScoresFragment extends Fragment {
 
     private void updateScores() {
         List<Score> topScores = scoreManager.getTopScores();
-        adapter = new ScoreAdapter(topScores);
+        adapter = new ScoreAdapter(topScores, score -> {
+            if (listener != null) {
+                listener.onScoreSelected(score);
+            }
+        });
         recyclerView.setAdapter(adapter);
     }
 
-    private class ScoreAdapter extends RecyclerView.Adapter<ScoreViewHolder> {
+    private static class ScoreAdapter extends RecyclerView.Adapter<ScoreViewHolder> {
         private List<Score> scores;
+        private OnScoreClickListener listener;
 
-        ScoreAdapter(List<Score> scores) {
+        interface OnScoreClickListener {
+            void onScoreClick(Score score);
+        }
+
+        ScoreAdapter(List<Score> scores, OnScoreClickListener listener) {
             this.scores = scores;
+            this.listener = listener;
         }
 
         @NonNull
@@ -54,7 +81,7 @@ public class ScoresFragment extends Fragment {
         public ScoreViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_score, parent, false);
-            return new ScoreViewHolder(view);
+            return new ScoreViewHolder(view, listener);
         }
 
         @Override
@@ -73,18 +100,26 @@ public class ScoresFragment extends Fragment {
         TextView textViewRank;
         TextView textViewPlayerName;
         TextView textViewScore;
+        ScoreAdapter.OnScoreClickListener listener;
 
-        ScoreViewHolder(View itemView) {
+        ScoreViewHolder(View itemView, ScoreAdapter.OnScoreClickListener listener) {
             super(itemView);
             textViewRank = itemView.findViewById(R.id.textViewRank);
             textViewPlayerName = itemView.findViewById(R.id.textViewPlayerName);
             textViewScore = itemView.findViewById(R.id.textViewScore);
+            this.listener = listener;
         }
 
-        void bind(Score score, int rank) {
+        void bind(final Score score, int rank) {
             textViewRank.setText(String.valueOf(rank));
             textViewPlayerName.setText(score.getPlayerName());
             textViewScore.setText(String.valueOf(score.getScore()));
+
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onScoreClick(score);
+                }
+            });
         }
     }
 }
